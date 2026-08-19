@@ -1,0 +1,24 @@
+name: Build PulseOS (Android 11 GSI)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Build Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git wget curl aria2 python3
+
+    - name: Download & Inject Game Tweaks
+      run: |
+        echo "=== СБОРКА ИГРОВОЙ PULSEOS ДЛЯ REDMI 7A ==="
+        # Здесь мы автоматизируем скачивание чистого Android 11 (AOSP)
+        # И в процессе сборки внедрим обман процессора под Google Pixel 5
+        # А также настроим агрессивное сжатие ОЗУ (zRam твики)
+        echo "Инициализация скриптов оптимизации..."
