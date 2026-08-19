@@ -9,12 +9,12 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y aria2 xz-utils
+        sudo apt-get install -y aria2 xz-utils zip
 
     - name: Download & Extract GSI
       run: |
@@ -23,8 +23,13 @@ jobs:
         xz -d system-*.img.xz
         mv system-*.img PulseOS-Android11-Pine.img
 
-    - name: Upload Finished Image Directly
+    - name: Fast Zip Package
+      run: |
+        echo "=== БЫСТРОЕ СЖАТИЕ В ZIP ==="
+        zip -r PulseOS-With-PlayMarket.zip PulseOS-Android11-Pine.img
+
+    - name: Upload Finished Artifact
       uses: actions/upload-artifact@v4
       with:
         name: PulseOS-With-PlayMarket
-        path: PulseOS-Android11-Pine.img
+        path: PulseOS-With-PlayMarket.zip
