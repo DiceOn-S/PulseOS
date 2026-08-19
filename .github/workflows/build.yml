@@ -16,25 +16,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y aria2 xz-utils
 
-    - name: Download & Rename Base GSI
+    - name: Download & Extract GSI
       run: |
-        echo "=== СКАЧИВАНИЕ И ПОДГОТОВКА PULSEOS ==="
-        # Скачиваем стабильный Android 11 AOSP со встроенным Play Маркетом
+        echo "=== СКАЧИВАНИЕ И РАСПАКОВКА PULSEOS ==="
         aria2c -x16 -s16 -k1M "https://github.com"
-        
-        echo "=== РАСПАКОВКА ОБРАЗА СИСТЕМЫ ==="
         xz -d system-*.img.xz
-        
-        echo "=== ПЕРЕИМЕНОВАНИЕ В PULSEOS ==="
         mv system-*.img PulseOS-Android11-Pine.img
 
-    - name: Package Firmware
-      run: |
-        echo "=== УПАКОВКА В ИГРОВОЙ АРХИВ ==="
-        tar -cvzf PulseOS-Pine-PlayMarket.tar.gz PulseOS-Android11-Pine.img
-
-    - name: Upload Finished Firmware
+    - name: Upload Finished Image Directly
       uses: actions/upload-artifact@v4
       with:
         name: PulseOS-With-PlayMarket
-        path: PulseOS-Pine-PlayMarket.tar.gz
+        path: PulseOS-Android11-Pine.img
