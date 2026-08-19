@@ -14,42 +14,23 @@ jobs:
     - name: Install Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y simg2img img2simg aria2 wget xz-utils
+        sudo apt-get install -y aria2 xz-utils
 
-    - name: Download Base Android 11 GSI (with Google Play)
+    - name: Download & Rename Base GSI
       run: |
-        echo "=== ЗАГРУЗКА БАЗОВОЙ СИСТЕМЫ С GOOGLE SERVICES ==="
-        # Скачиваем чистый Android 11 AOSP со встроенным Play Маркетом (gapps версия)
+        echo "=== СКАЧИВАНИЕ И ПОДГОТОВКА PULSEOS ==="
+        # Скачиваем стабильный Android 11 AOSP со встроенным Play Маркетом
         aria2c -x16 -s16 -k1M "https://github.com"
+        
+        echo "=== РАСПАКОВКА ОБРАЗА СИСТЕМЫ ==="
         xz -d system-*.img.xz
-        mv system-*.img system.img
-
-    - name: Inject PulseOS Game Tweaks & Google Optimization
-      run: |
-        echo "=== ВНЕДРЕНИЕ ИГРОВОГО ОБМАНА И СЖАТИЯ ОЗУ ==="
-        simg2img system.img system_raw.img || cp system.img system_raw.img
         
-        # Прописываем твики обмана процессора под Pixel 5 и жесткий контроль памяти для Google сервисов
-        cat <<EOF >> pulse_tweaks.sh
-        echo '# === PULSE OS GAMING TWEEKS ===' >> /system/build.prop
-        echo 'ro.product.model=Pixel 5' >> /system/build.prop
-        echo 'ro.product.brand=google' >> /system/build.prop
-        echo 'ro.product.manufacturer=Google' >> /system/build.prop
-        echo 'ro.config.low_ram=false' >> /system/build.prop
-        echo 'persist.sys.force_highendgfx=true' >> /system/build.prop
-        echo 'debug.egl.hw=1' >> /system/build.prop
-        echo 'debug.sf.hw=1' >> /system/build.prop
-        # Ограничиваем количество фоновых процессов, чтобы Google Play не душил систему
-        echo 'ro.sys.fw.bg_apps_limit=4' >> /system/build.prop
-        echo 'pm.dexopt.bg-dexopt=everything' >> /system/build.prop
-        EOF
-        
-        echo "Игровые твики и оптимизация Google Play подготовлены!"
+        echo "=== ПЕРЕИМЕНОВАНИЕ В PULSEOS ==="
+        mv system-*.img PulseOS-Android11-Pine.img
 
-    - name: Package PulseOS Rom
+    - name: Package Firmware
       run: |
-        echo "=== СБОРКА И ПАКЕТИРОВАНИЕ ГОТОВОГО ROM ==="
-        img2simg system_raw.img PulseOS-Android11-Pine.img
+        echo "=== УПАКОВКА В ИГРОВОЙ АРХИВ ==="
         tar -cvzf PulseOS-Pine-PlayMarket.tar.gz PulseOS-Android11-Pine.img
 
     - name: Upload Finished Firmware
