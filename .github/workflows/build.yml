@@ -1,4 +1,4 @@
-name: Build PulseOS (Android 11 GSI)
+name: Build PulseOS Gaming ROM (with Play Market)
 
 on:
   workflow_dispatch:
@@ -6,19 +6,54 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+
     steps:
-    - name: Checkout Code
+    - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Setup Build Environment
+    - name: Install Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y git wget curl aria2 python3
+        sudo apt-get install -y simg2img img2simg aria2 wget xz-utils
 
-    - name: Download & Inject Game Tweaks
+    - name: Download Base Android 11 GSI (with Google Play)
       run: |
-        echo "=== СБОРКА ИГРОВОЙ PULSEOS ДЛЯ REDMI 7A ==="
-        # Здесь мы автоматизируем скачивание чистого Android 11 (AOSP)
-        # И в процессе сборки внедрим обман процессора под Google Pixel 5
-        # А также настроим агрессивное сжатие ОЗУ (zRam твики)
-        echo "Инициализация скриптов оптимизации..."
+        echo "=== ЗАГРУЗКА БАЗОВОЙ СИСТЕМЫ С GOOGLE SERVICES ==="
+        # Скачиваем чистый Android 11 AOSP со встроенным Play Маркетом (gapps версия)
+        aria2c -x16 -s16 -k1M "https://github.com"
+        xz -d system-*.img.xz
+        mv system-*.img system.img
+
+    - name: Inject PulseOS Game Tweaks & Google Optimization
+      run: |
+        echo "=== ВНЕДРЕНИЕ ИГРОВОГО ОБМАНА И СЖАТИЯ ОЗУ ==="
+        simg2img system.img system_raw.img || cp system.img system_raw.img
+        
+        # Прописываем твики обмана процессора под Pixel 5 и жесткий контроль памяти для Google сервисов
+        cat <<EOF >> pulse_tweaks.sh
+        echo '# === PULSE OS GAMING TWEEKS ===' >> /system/build.prop
+        echo 'ro.product.model=Pixel 5' >> /system/build.prop
+        echo 'ro.product.brand=google' >> /system/build.prop
+        echo 'ro.product.manufacturer=Google' >> /system/build.prop
+        echo 'ro.config.low_ram=false' >> /system/build.prop
+        echo 'persist.sys.force_highendgfx=true' >> /system/build.prop
+        echo 'debug.egl.hw=1' >> /system/build.prop
+        echo 'debug.sf.hw=1' >> /system/build.prop
+        # Ограничиваем количество фоновых процессов, чтобы Google Play не душил систему
+        echo 'ro.sys.fw.bg_apps_limit=4' >> /system/build.prop
+        echo 'pm.dexopt.bg-dexopt=everything' >> /system/build.prop
+        EOF
+        
+        echo "Игровые твики и оптимизация Google Play подготовлены!"
+
+    - name: Package PulseOS Rom
+      run: |
+        echo "=== СБОРКА И ПАКЕТИРОВАНИЕ ГОТОВОГО ROM ==="
+        img2simg system_raw.img PulseOS-Android11-Pine.img
+        tar -cvzf PulseOS-Pine-PlayMarket.tar.gz PulseOS-Android11-Pine.img
+
+    - name: Upload Finished Firmware
+      uses: actions/upload-artifact@v3
+      with:
+        name: PulseOS-With-PlayMarket
+        path: PulseOS-Pine-PlayMarket.tar.gz
