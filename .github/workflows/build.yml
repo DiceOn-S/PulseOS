@@ -1,4 +1,4 @@
-name: Build PulseOS Gaming ROM (with Play Market)
+name: Build PulseOS Gaming ROM
 
 on:
   workflow_dispatch:
@@ -11,25 +11,13 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Tools
+    - name: Download Raw GSI File
       run: |
-        sudo apt-get update
-        sudo apt-get install -y aria2 xz-utils zip
+        echo "=== СКАЧИВАНИЕ PULSEOS ==="
+        wget -q "https://github.com" -O PulseOS-Android11-Pine.img.xz
 
-    - name: Download & Extract GSI
-      run: |
-        echo "=== СКАЧИВАНИЕ И РАСПАКОВКА PULSEOS ==="
-        aria2c -x16 -s16 -k1M "https://github.com"
-        xz -d system-*.img.xz
-        mv system-*.img PulseOS-Android11-Pine.img
-
-    - name: Fast Zip Package
-      run: |
-        echo "=== БЫСТРОЕ СЖАТИЕ В ZIP ==="
-        zip -r PulseOS-With-PlayMarket.zip PulseOS-Android11-Pine.img
-
-    - name: Upload Finished Artifact
+    - name: Upload Clean Image
       uses: actions/upload-artifact@v4
       with:
         name: PulseOS-With-PlayMarket
-        path: PulseOS-With-PlayMarket.zip
+        path: PulseOS-Android11-Pine.img.xz
