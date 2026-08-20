@@ -8,16 +8,45 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Download Raw GSI File
-      run: |
-        echo "=== СКАЧИВАНИЕ PULSEOS ==="
-        wget -q "https://github.com" -O PulseOS-Android11-Pine.img.xz
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unxz wget
 
-    - name: Upload Clean Image
-      uses: actions/upload-artifact@v4
-      with:
-        name: PulseOS-With-PlayMarket
-        path: PulseOS-Android11-Pine.img.xz
+      - name: Download and Prepare Base GSI
+        run: |
+          echo "=== СКАЧИВАНИЕ БАЗОВОГО ОБРАЗА ==="
+          wget -q "https://github.com" -O base.img.xz
+          
+          echo "=== РАСПАКОВКА ==="
+          unxz base.img.xz
+          mv base.img system.img
+
+      - name: Inject PulseOS Gaming Tweaks
+        run: |
+          echo "=== ИНЖЕКТ ТВИКОВ И МАСКИРОВКИ ПОД ADRENO ==="
+          # Этот блок создает скрипт, который пропишет маскировку в build.prop при установке через DFE
+          mkdir -p customize_files
+          echo "ro.product.model=POCO F3" >> customize_files/gaming.prop
+          echo "ro.product.brand=Xiaomi" >> customize_files/gaming.prop
+          echo "ro.product.manufacturer=Xiaomi" >> customize_files/gaming.prop
+          echo "ro.opengles.version=196610" >> customize_files/gaming.prop
+          echo "debug.egl.hw=1" >> customize_files/gaming.prop
+          echo "debug.sf.hw=1" >> customize_files/gaming.prop
+          echo "persist.sys.composition.type=gpu" >> customize_files/gaming.prop
+          echo "ro.config.max_starting_bg=8" >> customize_files/gaming.prop
+
+      - name: Compress PulseOS Image
+        run: |
+          echo "=== СЖАТИЕ ГОТОВОЙ СИСТЕМЫ ==="
+          xz -1 system.img
+          mv system.img.xz PulseOS-Android11-Pine.img.xz
+
+      - name: Upload Clean Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: PulseOS-With-PlayMarket
+          path: PulseOS-Android11-Pine.img.xz
